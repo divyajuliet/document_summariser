@@ -10,61 +10,124 @@ from backend.app.extraction.quality import (
 
 def main():
 
+    # --------------------------------------------------
+    # TEST DOCUMENT
+    # --------------------------------------------------
+
     document = ExtractedDocument(
-        document_id="test-document",
+        document_id="quality-test",
+
         extraction_method="pdf_text",
+
         pages=[
             PageContent(
                 page_number=1,
-                text="This is a test document " * 30,
-                char_count=len(
-                    "This is a test document " * 30
+                text=(
+                    "This is a sample document containing "
+                    "meaningful extracted text. "
+                    "The purpose of this test is to evaluate "
+                    "the quality of the extraction pipeline."
+                ),
+                char_count=(
+                    len(
+                        "This is a sample document containing "
+                        "meaningful extracted text. "
+                        "The purpose of this test is to evaluate "
+                        "the quality of the extraction pipeline."
+                    )
                 ),
             ),
+
             PageContent(
                 page_number=2,
-                text="Another page containing text " * 30,
-                char_count=len(
-                    "Another page containing text " * 30
+                text=(
+                    "The second page also contains meaningful "
+                    "content. This allows us to test page "
+                    "coverage and structural consistency."
+                ),
+                char_count=(
+                    len(
+                        "The second page also contains meaningful "
+                        "content. This allows us to test page "
+                        "coverage and structural consistency."
+                    )
                 ),
             ),
         ],
     )
 
+    # --------------------------------------------------
+    # EVALUATE
+    # --------------------------------------------------
+
     evaluator = ExtractionQualityEvaluator()
 
-    quality = evaluator.evaluate(
+    result = evaluator.evaluate(
         document
     )
 
+    # --------------------------------------------------
+    # DISPLAY
+    # --------------------------------------------------
+
     print()
     print("=" * 60)
-    print("EXTRACTION QUALITY")
+    print("QEXT QUALITY SCORING TEST")
     print("=" * 60)
 
+    print()
+
     print(
-        f"Score: {quality.score}"
+        f"Overall Score: "
+        f"{result.score}"
     )
 
     print(
-        f"Characters: {quality.total_characters}"
+        f"Requires Fallback: "
+        f"{result.requires_fallback}"
     )
 
     print(
-        f"Pages with text: "
-        f"{quality.pages_with_text}/"
-        f"{quality.total_pages}"
+        f"Reason: "
+        f"{result.reason}"
+    )
+
+    print()
+
+    print("QUALITY DIMENSIONS")
+    print("-" * 60)
+
+    print(
+        f"Text Completeness: "
+        f"{result.text_completeness}"
     )
 
     print(
-        f"Requires fallback: "
-        f"{quality.requires_fallback}"
+        f"Page Coverage: "
+        f"{result.page_coverage}"
     )
 
     print(
-        f"Reason: {quality.reason}"
+        f"Character Quality: "
+        f"{result.character_quality}"
     )
 
+    print(
+        f"Structural Consistency: "
+        f"{result.structural_consistency}"
+    )
+
+    print(
+        f"Suspicious Character Score: "
+        f"{result.suspicious_character_score}"
+    )
+
+    print(
+        f"Text Density: "
+        f"{result.text_density}"
+    )
+
+    print()
     print("=" * 60)
 
 

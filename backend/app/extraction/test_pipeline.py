@@ -1,55 +1,57 @@
 from pathlib import Path
 
-from backend.app.extraction.pipeline import (
-    ExtractionPipeline,
-)
-
-
-PDF_PATH = Path(
-    "uploads/scanned_test.pdf"
-)
+from backend.app.extraction.pipeline import ExtractionPipeline
 
 
 def main():
 
-    if not PDF_PATH.exists():
+    # Change this filename if you want to test another PDF.
+    file_path = Path(
+        "uploads/24d5655e-d67d-444e-9896-567cde443fc3.pdf"
+    )
 
-        print(
-            f"PDF not found: {PDF_PATH}"
-        )
+    document_id = "24d5655e-d67d-444e-9896-567cde443fc3"
 
-        return
+    pipeline = ExtractionPipeline()
 
     print()
     print("=" * 60)
     print("EXTRACTION PIPELINE TEST")
     print("=" * 60)
 
-    pipeline = ExtractionPipeline()
-
     document, attempts = pipeline.extract(
-        file_path=PDF_PATH,
-        document_id="pipeline-test",
+        file_path=file_path,
+        document_id=document_id,
     )
+
+    # ==================================================
+    # FINAL EXTRACTION
+    # ==================================================
 
     print()
     print("FINAL EXTRACTION")
     print("-" * 60)
 
-    print(
-        f"Method: "
-        f"{document.extraction_method}"
-    )
+    print(f"Method: {document.extraction_method}")
+    print(f"Pages: {document.total_pages}")
+    print(f"Characters: {document.total_characters}")
 
-    print(
-        f"Pages: "
-        f"{document.total_pages}"
-    )
+    # ==================================================
+    # FINAL VALIDATION
+    # ==================================================
 
-    print(
-        f"Characters: "
-        f"{document.total_characters}"
-    )
+    from backend.app.validation.validator import ExtractionValidator
+
+    validator = ExtractionValidator()
+
+    validation = validator.validate(document)
+
+    print(f"Validation score: {validation.overall_score}")
+    print(f"Validation decision: {validation.decision}")
+
+    # ==================================================
+    # ATTEMPTS
+    # ==================================================
 
     print()
     print("ATTEMPTS")
@@ -63,7 +65,7 @@ def main():
         )
 
         print(
-            f"Score: "
+            f"Quality Score: "
             f"{attempt.quality_score}"
         )
 
@@ -76,6 +78,12 @@ def main():
             f"Reason: "
             f"{attempt.reason}"
         )
+
+        if attempt.error:
+            print(
+                f"Error: "
+                f"{attempt.error}"
+            )
 
         print()
 
