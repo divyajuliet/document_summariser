@@ -1,6 +1,11 @@
 from fastapi import FastAPI
 
 from backend.app.api.routes.documents import router as documents_router
+from backend.app.db.database import Base, engine
+from backend.app.db import models
+
+
+Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(
