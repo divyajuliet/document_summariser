@@ -4,14 +4,14 @@ from backend.app.extraction.models import (
     ExtractedDocument,
     PageContent,
 )
-from backend.app.extraction.pdf_extractor import PDFExtractor
+from backend.app.extraction.pipeline import ExtractionPipeline
 from backend.app.extraction.ocr_extractor import OCRExtractor
 
 
 class ExtractionRouter:
 
     def __init__(self):
-        self.pdf_extractor = PDFExtractor()
+        self.pipeline = ExtractionPipeline()
         self.ocr_extractor = OCRExtractor()
 
     def extract(
@@ -28,10 +28,12 @@ class ExtractionRouter:
 
         if extension == ".pdf":
 
-            return self.pdf_extractor.extract(
+            document, attempts = self.pipeline.extract(
                 file_path=file_path,
                 document_id=document_id,
             )
+
+            return document
 
         # -----------------------------------------
         # IMAGE → OCR
