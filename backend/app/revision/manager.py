@@ -2,6 +2,9 @@ from backend.app.revision.models import (
     SummaryRevision,
     RevisionHistory,
 )
+from backend.app.devils_advocate.models import (
+    DevilAdvocateReport,
+)
 
 
 class RevisionManager:
@@ -32,6 +35,7 @@ class RevisionManager:
         self,
         summary: str,
         verification_score: float,
+        devil_advocate_report: DevilAdvocateReport | None = None,
     ) -> SummaryRevision:
 
         if not self.history.revisions:
@@ -46,7 +50,36 @@ class RevisionManager:
             self.history.revisions
         ) + 1
 
-        if verification_score > previous_best.verification_score:
+        # --------------------------------------------------
+        # CHECK 1: VERIFICATION SCORE
+        # --------------------------------------------------
+
+        score_improved = (
+            verification_score
+            > previous_best.verification_score
+        )
+
+        # --------------------------------------------------
+        # CHECK 2: DEVIL'S ADVOCATE
+        # --------------------------------------------------
+
+        serious_issue = False
+
+        if devil_advocate_report is not None:
+
+            serious_issue = any(
+                result.status in {
+                    "contradiction",
+                    "high_risk",
+                }
+                for result in devil_advocate_report.results
+            )
+
+        # --------------------------------------------------
+        # COMMIT
+        # --------------------------------------------------
+
+        if score_improved and not serious_issue:
 
             revision = SummaryRevision(
                 version=new_version,
@@ -55,27 +88,45 @@ class RevisionManager:
                 status="committed",
                 reason=(
                     "Candidate revision improved "
-                    "the verification score."
+                    "the verification score and "
+                    "no serious Devil's Advocate "
+                    "issues were detected."
                 ),
             )
 
             self.history.revisions.append(revision)
             self.history.best_version = new_version
 
-        else:
+            return revision
 
-            revision = SummaryRevision(
-                version=new_version,
-                summary=previous_best.summary,
-                verification_score=previous_best.verification_score,
-                status="rolled_back",
-                reason=(
-                    "Candidate revision did not improve "
-                    "the verification score."
-                ),
+        # --------------------------------------------------
+        # ROLLBACK
+        # --------------------------------------------------
+
+        if serious_issue:
+
+            reason = (
+                "Candidate revision was rolled back "
+                "because the Devil's Advocate detected "
+                "a serious contradiction or high-risk issue."
             )
 
-            self.history.revisions.append(revision)
+        else:
+
+            reason = (
+                "Candidate revision did not improve "
+                "the verification score."
+            )
+
+        revision = SummaryRevision(
+            version=new_version,
+            summary=previous_best.summary,
+            verification_score=previous_best.verification_score,
+            status="rolled_back",
+            reason=reason,
+        )
+
+        self.history.revisions.append(revision)
 
         return revision
 
