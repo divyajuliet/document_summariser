@@ -40,6 +40,7 @@ async def upload_document(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
+
     # 1. Validate filename
     if not file.filename:
         raise HTTPException(
@@ -130,6 +131,7 @@ async def upload_document(
 def get_documents(
     db: Session = Depends(get_db)
 ):
+
     documents = db.query(Document).all()
 
     return documents
@@ -144,10 +146,13 @@ def extract_document(
     document_id: str,
     db: Session = Depends(get_db)
 ):
+
     # 1. Find document in database
     document = (
         db.query(Document)
-        .filter(Document.document_id == document_id)
+        .filter(
+            Document.document_id == document_id
+        )
         .first()
     )
 
@@ -158,7 +163,10 @@ def extract_document(
         )
 
     # 2. Find physical file
-    file_path = UPLOAD_DIR / document.stored_filename
+    file_path = (
+        UPLOAD_DIR /
+        document.stored_filename
+    )
 
     if not file_path.exists():
         raise HTTPException(
@@ -166,31 +174,95 @@ def extract_document(
             detail="Stored document file not found."
         )
 
-    # 3. Run extraction
+    # 3. Run extraction pipeline
     try:
-        extracted = extraction_router.extract(
+
+        result = extraction_router.extract(
             file_path=file_path,
             document_id=document.document_id,
         )
 
     except Exception as exc:
+
         raise HTTPException(
             status_code=500,
             detail=f"Extraction failed: {str(exc)}"
         )
 
-    # 4. Return structured extraction result
+    # ========================================================
+    # EXTRACT RESULTS
+    # ========================================================
+
+    extracted = result["document"]
+    attempts = result["attempts"]
+    validation = result["validation"]
+
+    # ========================================================
+    # BUILD ATTEMPT RESPONSE
+    # ========================================================
+
+    attempt_results = []
+
+    for attempt in attempts:
+
+        attempt_results.append(
+            {
+                "attempt_number": attempt.attempt_number,
+                "method": attempt.method,
+                "quality_score": attempt.quality_score,
+                "status": attempt.status,
+                "reason": attempt.reason,
+                "error": attempt.error,
+            }
+        )
+
+    # ========================================================
+    # BUILD VALIDATION RESPONSE
+    # ========================================================
+
+    validation_result = None
+
+    if validation is not None:
+
+        validation_result = {
+            "overall_score": validation.overall_score,
+            "decision": validation.decision,
+            "questions": [
+                {
+                    "question": question.question,
+                    "passed": question.passed,
+                    "score": question.score,
+                    "explanation": question.explanation,
+                }
+                for question in validation.questions
+            ],
+        }
+
+    # ========================================================
+    # RETURN COMPLETE EXTRACTION RESULT
+    # ========================================================
+
     return {
         "document_id": extracted.document_id,
-        "extraction_method": extracted.extraction_method,
-        "total_pages": extracted.total_pages,
-        "total_characters": extracted.total_characters,
-        "pages": [
-            {
-                "page_number": page.page_number,
-                "text": page.text,
-                "char_count": page.char_count,
-            }
-            for page in extracted.pages
-        ],
+
+        "extraction": {
+            "method": extracted.extraction_method,
+            "total_pages": extracted.total_pages,
+            "total_characters": extracted.total_characters,
+            "pages": [
+                {
+                    "page_number": page.page_number,
+                    "text": page.text,
+                    "char_count": page.char_count,
+                }
+                for page in extracted.pages
+            ],
+        },
+
+        "qext": {
+            "selected_method": extracted.extraction_method,
+            "attempts": attempt_results,
+        },
+
+        "validation": validation_result,
     }

@@ -10,6 +10,7 @@ from backend.app.extraction.pdf_extractor import PDFExtractor
 from backend.app.extraction.ocr_extractor import OCRExtractor
 from backend.app.extraction.quality import ExtractionQualityEvaluator
 from backend.app.validation.validator import ExtractionValidator
+from backend.app.validation.models import ValidationResult
 
 
 class ExtractionPipeline:
@@ -24,7 +25,11 @@ class ExtractionPipeline:
         self,
         file_path: Path,
         document_id: str,
-    ) -> Tuple[ExtractedDocument, List[ExtractionAttempt]]:
+    ) -> Tuple[
+        ExtractedDocument,
+        List[ExtractionAttempt],
+        ValidationResult,
+    ]:
 
         attempts = []
 
@@ -87,13 +92,13 @@ class ExtractionPipeline:
                 file_path=file_path,
             )
 
-            # OCR extractor currently returns a list of
-            # strings. Convert each string into PageContent.
             ocr_pages = []
 
-            for index, text in enumerate(ocr_result, start=1):
+            for index, text in enumerate(
+                ocr_result,
+                start=1,
+            ):
 
-                # Make sure the value is a string.
                 text = str(text)
 
                 ocr_pages.append(
@@ -239,4 +244,8 @@ class ExtractionPipeline:
 
                 attempt.status = "rejected"
 
-        return best_document, attempts
+        return (
+            best_document,
+            attempts,
+            best_validation,
+        )

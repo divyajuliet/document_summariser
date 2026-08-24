@@ -5,53 +5,77 @@ from backend.app.extraction.pipeline import ExtractionPipeline
 
 def main():
 
-    # Change this filename if you want to test another PDF.
-    file_path = Path(
-        "uploads/24d5655e-d67d-444e-9896-567cde443fc3.pdf"
-    )
-
-    document_id = "24d5655e-d67d-444e-9896-567cde443fc3"
-
-    pipeline = ExtractionPipeline()
-
     print()
     print("=" * 60)
     print("EXTRACTION PIPELINE TEST")
     print("=" * 60)
 
-    document, attempts = pipeline.extract(
+    # ------------------------------------------------------------
+    # CHANGE THIS FILE NAME IF YOU WANT TO TEST A DIFFERENT PDF
+    # ------------------------------------------------------------
+
+    file_path = Path(
+        "uploads/24d5655e-d67d-444e-9896-567cde443fc3.pdf"
+    )
+
+    document_id = "test-document"
+
+    # ------------------------------------------------------------
+    # CREATE PIPELINE
+    # ------------------------------------------------------------
+
+    pipeline = ExtractionPipeline()
+
+    # ------------------------------------------------------------
+    # RUN EXTRACTION
+    # ------------------------------------------------------------
+
+    document, attempts, validation = pipeline.extract(
         file_path=file_path,
         document_id=document_id,
     )
 
-    # ==================================================
+    # ------------------------------------------------------------
     # FINAL EXTRACTION
-    # ==================================================
+    # ------------------------------------------------------------
 
     print()
     print("FINAL EXTRACTION")
     print("-" * 60)
 
-    print(f"Method: {document.extraction_method}")
-    print(f"Pages: {document.total_pages}")
-    print(f"Characters: {document.total_characters}")
+    print(
+        f"Method: {document.extraction_method}"
+    )
 
-    # ==================================================
-    # FINAL VALIDATION
-    # ==================================================
+    print(
+        f"Pages: {document.total_pages}"
+    )
 
-    from backend.app.validation.validator import ExtractionValidator
+    print(
+        f"Characters: {document.total_characters}"
+    )
 
-    validator = ExtractionValidator()
+    # ------------------------------------------------------------
+    # VALIDATION
+    # ------------------------------------------------------------
 
-    validation = validator.validate(document)
+    print()
+    print("VALIDATION")
+    print("-" * 60)
 
-    print(f"Validation score: {validation.overall_score}")
-    print(f"Validation decision: {validation.decision}")
+    print(
+        f"Validation Score: "
+        f"{validation.overall_score}"
+    )
 
-    # ==================================================
+    print(
+        f"Validation Decision: "
+        f"{validation.decision}"
+    )
+
+    # ------------------------------------------------------------
     # ATTEMPTS
-    # ==================================================
+    # ------------------------------------------------------------
 
     print()
     print("ATTEMPTS")
