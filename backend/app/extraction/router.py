@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any, Dict
 
 from backend.app.extraction.models import (
     ExtractedDocument,
@@ -18,26 +19,32 @@ class ExtractionRouter:
         self,
         file_path: Path,
         document_id: str,
-    ) -> ExtractedDocument:
+    ) -> Dict[str, Any]:
 
         extension = file_path.suffix.lower()
 
-        # -----------------------------------------
-        # PDF
-        # -----------------------------------------
+        # ============================================================
+        # PDF → QEXT EXTRACTION PIPELINE
+        # ============================================================
 
         if extension == ".pdf":
 
-            document, attempts = self.pipeline.extract(
-                file_path=file_path,
-                document_id=document_id,
+            document, attempts, validation = (
+                self.pipeline.extract(
+                    file_path=file_path,
+                    document_id=document_id,
+                )
             )
 
-            return document
+            return {
+                "document": document,
+                "attempts": attempts,
+                "validation": validation,
+            }
 
-        # -----------------------------------------
+        # ============================================================
         # IMAGE → OCR
-        # -----------------------------------------
+        # ============================================================
 
         if extension in {".png", ".jpg", ".jpeg"}:
 
@@ -51,15 +58,21 @@ class ExtractionRouter:
                 char_count=len(text),
             )
 
-            return ExtractedDocument(
+            document = ExtractedDocument(
                 document_id=document_id,
                 extraction_method="ocr",
                 pages=[page],
             )
 
-        # -----------------------------------------
+            return {
+                "document": document,
+                "attempts": [],
+                "validation": None,
+            }
+
+        # ============================================================
         # UNSUPPORTED FORMAT
-        # -----------------------------------------
+        # ============================================================
 
         raise ValueError(
             f"No extraction strategy available "
