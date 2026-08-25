@@ -166,7 +166,7 @@ class DevilAdvocateChecker:
 
                 evidence_numbers.extend(
                     cls._extract_numbers(
-                        item.evidence_text
+                        item.text
                     )
                 )
 
@@ -211,7 +211,7 @@ class DevilAdvocateChecker:
         if claim.entities:
 
             evidence_text = " ".join(
-                item.evidence_text.lower()
+                item.text.lower()
                 for item in evidence
             )
 
@@ -261,7 +261,7 @@ class DevilAdvocateChecker:
         if claim.temporal_values:
 
             evidence_text = " ".join(
-                item.evidence_text.lower()
+                item.text.lower()
                 for item in evidence
             )
 
@@ -314,7 +314,7 @@ class DevilAdvocateChecker:
         )
 
         evidence_text = " ".join(
-            item.evidence_text.lower()
+            item.text.lower()
             for item in evidence
         )
 

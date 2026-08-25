@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
-from backend.app.claims.models import Claim, Evidence
-from backend.app.evidence.retriever import EvidenceRetriever
+from backend.app.claims.models import Claim
+from backend.app.evidence.models import EvidenceItem
 from backend.app.questioning.models import VerificationQuestion
 from backend.app.verification.models import VerificationResult
 
@@ -21,34 +21,18 @@ class QuestionAnswer:
 
 class QuestionExecutor:
 
-    def __init__(self):
-        self.retriever = EvidenceRetriever()
-
     def execute(
         self,
         question: VerificationQuestion,
         claim: Claim,
-        evidence: List[Evidence],
-        top_k: int = 3,
+        evidence: List[EvidenceItem],
     ) -> VerificationResult:
-
-        # --------------------------------------------------
-        # RETRIEVE RELEVANT EVIDENCE
-        # --------------------------------------------------
-
-        retrieval_result = self.retriever.retrieve(
-            claim=claim,
-            evidence=evidence,
-            top_k=top_k,
-        )
-
-        retrieved = retrieval_result.results
 
         # --------------------------------------------------
         # NO EVIDENCE
         # --------------------------------------------------
 
-        if not retrieved:
+        if not evidence:
 
             return VerificationResult(
                 claim_id=claim.claim_id,
@@ -69,7 +53,7 @@ class QuestionExecutor:
         evidence_pages = list(
             dict.fromkeys(
                 item.page_number
-                for item in retrieved
+                for item in evidence
             )
         )
 
@@ -77,7 +61,7 @@ class QuestionExecutor:
         # BEST EVIDENCE
         # --------------------------------------------------
 
-        best_evidence = retrieved[0]
+        best_evidence = evidence[0]
 
         best_score = float(
             best_evidence.relevance_score
